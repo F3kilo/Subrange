@@ -4,16 +4,11 @@ use std::collections::BTreeSet;
 use std::ops::Bound;
 
 #[derive(Debug)]
-pub(crate) struct IntervalsCollection {
+pub struct IntervalsCollection {
     btree: BTreeSet<IntervalLenOrd>,
 }
 
 impl IntervalsCollection {
-    pub fn new() -> Self {
-        let btree = BTreeSet::new();
-        Self { btree }
-    }
-
     pub fn take_enough(&mut self, length: i64) -> Option<Interval> {
         assert!(length >= 0, "Interval length must be >= 0");
         let int_len_ord = IntervalLenOrd(Interval::new(0, length));
@@ -58,6 +53,13 @@ impl IntervalsCollection {
 
     pub fn iter(&self) -> impl Iterator<Item = &Interval> {
         self.btree.iter().map(|i| &i.0)
+    }
+}
+
+impl Default for IntervalsCollection {
+    fn default() -> Self {
+        let btree = BTreeSet::new();
+        Self { btree }
     }
 }
 

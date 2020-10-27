@@ -1,4 +1,4 @@
-mod collection;
+pub mod collection;
 pub mod interval;
 
 use crate::collection::IntervalsCollection;
@@ -13,7 +13,7 @@ impl Subranges {
 
     /// Creates `Self` with specified free range.
     pub fn new(range: Interval) -> Self {
-        let mut free = IntervalsCollection::new();
+        let mut free = IntervalsCollection::default();
         free.insert(range);
         Self { free }
     }
