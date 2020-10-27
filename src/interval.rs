@@ -49,7 +49,7 @@ impl Interval {
 
     pub fn connect(&self, other: &Self) -> Self {
         let min_start = cmp::min(self.start, other.start);
-        let max_end = cmp::min(self.end(), other.end());
+        let max_end = cmp::max(self.end(), other.end());
         Interval::new(min_start, max_end - min_start)
     }
 
