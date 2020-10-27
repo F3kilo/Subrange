@@ -17,15 +17,7 @@ impl Subranges {
     /// If free interval with specified `length` doesn't exists, return None.
     pub fn take_free_subrange(&mut self, length: i64) -> Option<Interval> {
         assert!(length > 0, "Length must be >= 0");
-        let enough_free_interval = self.free.take_enough(length);
-        enough_free_interval.map(|int| {
-            if int.len() > length {
-                let (req, extra) = int.split(length); // TODO: To collection
-                self.free.insert(&extra);
-                return req;
-            }
-            int
-        })
+        self.free.take_exact(length)
     }
 
     /// Free all filled intervals, that intersects with `subrange`.
@@ -146,8 +138,20 @@ impl IntervalsCollection {
         self.btree.range(bounds).next().map(|int| int.0)
     }
 
+    pub fn take_exact(&mut self, length: i64) -> Option<Interval> {
+        let enough_free_interval = self.take_enough(length);
+        enough_free_interval.map(|int| {
+            if int.len() > length {
+                let (req, extra) = int.split(length);
+                self.btree.insert(IntervalLenOrd(extra));
+                return req;
+            }
+            int
+        })
+    }
+
     pub fn insert(&mut self, interval: &Interval) {
-        let near_intervals = self.near_internal(interval);
+        let near_intervals = self.near(interval);
         let mut connection = *interval;
         for int in &near_intervals {
             self.btree.remove(int);
@@ -156,14 +160,7 @@ impl IntervalsCollection {
         self.btree.insert(IntervalLenOrd(connection));
     }
 
-    fn near(&self, interval: &Interval) -> Vec<Interval> {
-        self.near_internal(interval)
-            .into_iter()
-            .map(|int| int.0)
-            .collect()
-    }
-
-    fn near_internal(&self, interval: &Interval) -> Vec<IntervalLenOrd> {
+    fn near(&self, interval: &Interval) -> Vec<IntervalLenOrd> {
         self.btree
             .iter()
             .filter(|int| interval.near(&int.0))
