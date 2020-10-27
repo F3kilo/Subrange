@@ -4,11 +4,14 @@ pub mod interval;
 use crate::collection::IntervalsCollection;
 use crate::interval::Interval;
 
+/// Provides non-intersecting integer subranges of initial range.
 pub struct Subranges {
     free: IntervalsCollection,
 }
 
 impl Subranges {
+
+    /// Creates `Self` with specified free range.
     pub fn new(range: Interval) -> Self {
         let mut free = IntervalsCollection::new();
         free.insert(range);

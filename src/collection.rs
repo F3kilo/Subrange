@@ -92,7 +92,7 @@ mod tests {
     fn take_enough() {
         let mut coll = test_data();
         let seven_len = coll.take_enough(7).unwrap();
-        assert!(seven_len.length > 7);
+        assert!(seven_len.len() > 7);
         assert!(coll.take_enough(1).is_none());
     }
 

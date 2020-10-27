@@ -3,52 +3,63 @@ use std::cmp;
 /// Represent integer interval.
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct Interval {
-    pub start: i64,
-    pub length: i64,
+    start: i64,
+    length: i64,
 }
 
 impl Interval {
+    /// Create new interval [`start`; start + length).
     pub fn new(start: i64, length: i64) -> Self {
         assert!(length >= 0);
         Self { start, length }
     }
 
+    /// Length of interval. Count of integers in `self`.
     pub fn len(&self) -> i64 {
         self.length
     }
 
+    /// True if self.len() == 0.
     pub fn is_empty(&self) -> bool {
         self.length == 0
     }
 
+    /// First intager in `self`.
     pub fn start(&self) -> i64 {
         self.start
     }
 
+    /// Integer after last integer in `self`.
     pub fn end(&self) -> i64 {
         self.start + self.length
     }
 
+    /// Return `true` if `self` contains `p`. Else `false`.
     pub fn contains(&self, p: i64) -> bool {
         p >= self.start && p < self.end()
     }
 
+    /// Test if `other` has got common integers with `self`.
     pub fn intersect(&self, other: &Self) -> bool {
         let connected = self.connect(other);
         connected.length < (self.length + other.length)
     }
 
+    /// Return `true` if no integers between `self` and `other` exists.
     pub fn near(&self, other: &Self) -> bool {
         let connected = self.connect(other);
         connected.length <= (self.length + other.length)
     }
 
+    /// Return interval from min `start` to max `end`.
     pub fn connect(&self, other: &Self) -> Self {
         let min_start = cmp::min(self.start, other.start);
         let max_end = cmp::max(self.end(), other.end());
         Interval::new(min_start, max_end - min_start)
     }
 
+    /// Split `self` into two intervals.
+    /// First - `[self.start; self.start + length)`, second - `[self.start + length; self.end)`.
     pub fn split(&self, length: i64) -> (Self, Self) {
         let len_fit = length >= 0 && length <= self.length;
         assert!(len_fit, "Split length must be >= 0 and <= original length");
@@ -57,6 +68,7 @@ impl Interval {
         (left, right)
     }
 
+    /// If intervals is near, return their union. Else `None`.
     pub fn try_join(&self, other: &Self) -> Option<Self> {
         match self.near(other) {
             true => Some(self.connect(other)),
@@ -64,6 +76,7 @@ impl Interval {
         }
     }
 
+    /// Return iterator over integers in `self`.
     pub fn iter(&self) -> IntervalIterator {
         IntervalIterator {
             interval: &self,
@@ -89,7 +102,6 @@ impl<'a> Iterator for IntervalIterator<'a> {
         result
     }
 }
-
 
 #[cfg(test)]
 mod tests {
