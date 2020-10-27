@@ -11,7 +11,7 @@ pub struct Subranges {
 impl Subranges {
     pub fn new(range: Interval) -> Self {
         let mut free = IntervalsCollection::new();
-        free.insert(&range);
+        free.insert(range);
         Self { free }
     }
 
@@ -24,7 +24,7 @@ impl Subranges {
 
     /// Free all filled intervals, that intersects with `subrange`.
     pub fn erase_subrange(&mut self, subrange: Interval) {
-        self.free.insert(&subrange)
+        self.free.insert(subrange)
     }
 }
 
