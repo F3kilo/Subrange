@@ -29,10 +29,6 @@ impl Interval {
         self.start + self.length
     }
 
-    pub fn dist(&self) -> i64 {
-        (self.length as u64).saturating_sub(1) as i64
-    }
-
     pub fn contains(&self, p: i64) -> bool {
         p >= self.start && p < self.end()
     }
@@ -59,14 +55,6 @@ impl Interval {
         let left = Self::new(self.start, length);
         let right = Self::new(self.start + length, self.length - length);
         (left, right)
-    }
-
-    pub fn join(&self, other: &Self) -> Self {
-        assert!(
-            self.near(other),
-            "Joining intervals must be near to each other"
-        );
-        self.connect(other)
     }
 
     pub fn try_join(&self, other: &Self) -> Option<Self> {
@@ -99,5 +87,50 @@ impl<'a> Iterator for IntervalIterator<'a> {
         };
         self.counter += 1;
         result
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use crate::interval::Interval;
+
+    #[test]
+    fn connect() {
+        let i1 = Interval::new(0, 10);
+        let i2 = Interval::new(15, 10);
+        let conn = i1.connect(&i2);
+        assert_eq!(conn.start(), i1.start());
+        assert_eq!(conn.end(), i2.end());
+
+        let conn_refl = i2.connect(&i1);
+        assert_eq!(conn, conn_refl);
+    }
+
+    #[test]
+    fn split() {
+        let i = Interval::new(0, 10);
+        let sp = 3;
+        let (s1, s2) = i.split(sp);
+        assert_eq!(s1.start(), i.start());
+        assert_eq!(s1.len(), sp);
+        assert_eq!(s2.len(), i.len() - s1.len());
+        assert_eq!(s2.start(), s1.end())
+    }
+
+    #[test]
+    fn join() {
+        let i1 = Interval::new(0, 10);
+        let i2 = Interval::new(5, 10);
+        let i3 = Interval::new(20, 10);
+        let join = i1.try_join(&i2).unwrap();
+        assert_eq!(join.start(), i1.start());
+        assert_eq!(join.end(), i2.end());
+
+        let join_refl = i2.try_join(&i1).unwrap();
+        assert_eq!(join, join_refl);
+
+        assert!(i1.try_join(&i3).is_none());
+        assert!(i3.try_join(&i1).is_none());
     }
 }
