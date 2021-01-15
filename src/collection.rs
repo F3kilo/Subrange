@@ -21,9 +21,47 @@ impl IntervalsCollection {
         })
     }
 
+    pub fn take_enough_aligned(&mut self, length: i64, align: i64) -> Option<Interval> {
+        assert!(align > 0, "Interval alignment must be > 0");
+        assert!(length >= 0, "Interval length must be >= 0");
+        let int_len_ord = IntervalLenOrd(Interval::new(0, length));
+        let bounds = (Bound::Included(int_len_ord), Bound::Unbounded);
+        let mut range = self.btree.range(bounds);
+        let enough_int = range
+            .find(|i| {
+                let pad = Self::align_pad(&i.0, align);
+                (i.0.len() - pad) >= length
+            })
+            .copied();
+        if let Some(i) = enough_int {
+            self.btree.remove(&i);
+            return Some(i.0);
+        }
+        None
+    }
+
     pub fn take_exact(&mut self, length: i64) -> Option<Interval> {
         let enough_free_interval = self.take_enough(length);
         enough_free_interval.map(|int| {
+            if int.len() > length {
+                let (req, extra) = int.split(length);
+                self.btree.insert(IntervalLenOrd(extra));
+                return req;
+            }
+            int
+        })
+    }
+
+    pub fn take_exact_aligned(&mut self, length: i64, align: i64) -> Option<Interval> {
+        let enough_free_interval = self.take_enough_aligned(length, align);
+        enough_free_interval.map(|int| {
+            let align_pad = Self::align_pad(&int, align);
+            if align_pad > 0 {
+                let pad_int = Interval::new(int.start(), align_pad);
+                self.btree.insert(IntervalLenOrd(pad_int));
+            }
+
+            let int = Interval::new(int.start() + align_pad, int.len() - align_pad);
             if int.len() > length {
                 let (req, extra) = int.split(length);
                 self.btree.insert(IntervalLenOrd(extra));
@@ -49,6 +87,14 @@ impl IntervalsCollection {
             .filter(|int| interval.near(&int.0))
             .cloned()
             .collect()
+    }
+
+    fn align_pad(int: &Interval, align: i64) -> i64 {
+        let rem = int.start() % align;
+        if rem == 0 {
+            return 0;
+        }
+        return align - rem;
     }
 
     pub fn iter(&self) -> impl Iterator<Item = &Interval> {
@@ -84,7 +130,7 @@ mod tests {
     use crate::interval::Interval;
 
     fn test_data() -> IntervalsCollection {
-        let mut coll = IntervalsCollection::new();
+        let mut coll = IntervalsCollection::default();
         let free_interval = Interval::new(0, 10);
         coll.insert(free_interval);
         coll
@@ -148,6 +194,30 @@ mod tests {
         assert_eq!(it.next().unwrap().len(), 3);
         assert_eq!(it.next().unwrap().len(), 10);
         assert!(it.next().is_none());
+    }
+
+    #[test]
+    fn take_exact_align() {
+        let mut coll = IntervalsCollection::default();
+        let free_interval = Interval::new(0, 30);
+        coll.insert(free_interval);
+
+        let len = 15;
+        let align = 2;
+        let int = coll.take_exact_aligned(len, align).unwrap();
+        assert_eq!(int.start() % align, 0);
+        assert_eq!(int.len(), len);
+
+        let len = 4;
+        let align = 4;
+        let int = coll.take_exact_aligned(len, align).unwrap();
+        assert_eq!(int.start() % align, 0);
+        assert_eq!(int.len(), len);
+
+        let mut iter = coll.iter();
+        assert_eq!(*iter.next().unwrap(), Interval::new(15, 1));
+        assert_eq!(*iter.next().unwrap(), Interval::new(20, 10));
+        assert!(iter.next().is_none());
     }
 
     #[test]
