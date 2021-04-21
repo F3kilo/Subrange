@@ -10,7 +10,6 @@ pub struct Interval {
 impl Interval {
     /// Create new interval [`start`; start + length).
     pub fn new(start: u64, length: u64) -> Self {
-        assert!(length >= 0);
         Self { start, length }
     }
 
