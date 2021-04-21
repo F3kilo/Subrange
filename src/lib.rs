@@ -7,6 +7,7 @@ use crate::interval::Interval;
 /// Provides non-intersecting integer subranges of initial range.
 pub struct Subranges {
     free: IntervalsCollection,
+    len: u64,
 }
 
 impl Subranges {
@@ -15,7 +16,7 @@ impl Subranges {
     pub fn new(range: Interval) -> Self {
         let mut free = IntervalsCollection::default();
         free.insert(range);
-        Self { free }
+        Self { free, len: range.len() }
     }
 
     /// Take free interval with specified `length` and returns it.
@@ -35,5 +36,15 @@ impl Subranges {
     /// Free all filled intervals, that intersects with `subrange`.
     pub fn erase_subrange(&mut self, subrange: Interval) {
         self.free.insert(subrange)
+    }
+
+    /// Length of full range.
+    pub fn len(&self) -> u64 {
+        self.len
+    }
+
+    /// True if `self.len()` is zero.
+    pub fn is_empty(&self) -> bool {
+        self.len == 0
     }
 }
