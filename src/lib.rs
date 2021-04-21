@@ -20,14 +20,14 @@ impl Subranges {
 
     /// Take free interval with specified `length` and returns it.
     /// If free interval with specified `length` doesn't exists, return None.
-    pub fn take_free_subrange(&mut self, length: i64) -> Option<Interval> {
+    pub fn take_free_subrange(&mut self, length: u64) -> Option<Interval> {
         assert!(length > 0, "Length must be > 0");
         self.free.take_exact(length)
     }
 
     /// Take free interval with specified `length` and returns it.
     /// If free interval with specified `length` doesn't exists, return None.
-    pub fn take_free_align_subrange(&mut self, length: i64, align: i64) -> Option<Interval> {
+    pub fn take_free_align_subrange(&mut self, length: u64, align: u64) -> Option<Interval> {
         assert!(length > 0, "Length must be > 0");
         self.free.take_exact_aligned(length, align)
     }

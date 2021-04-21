@@ -3,19 +3,19 @@ use std::cmp;
 /// Represent integer interval.
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub struct Interval {
-    start: i64,
-    length: i64,
+    start: u64,
+    length: u64,
 }
 
 impl Interval {
     /// Create new interval [`start`; start + length).
-    pub fn new(start: i64, length: i64) -> Self {
+    pub fn new(start: u64, length: u64) -> Self {
         assert!(length >= 0);
         Self { start, length }
     }
 
     /// Length of interval. Count of integers in `self`.
-    pub fn len(&self) -> i64 {
+    pub fn len(&self) -> u64 {
         self.length
     }
 
@@ -25,17 +25,17 @@ impl Interval {
     }
 
     /// First intager in `self`.
-    pub fn start(&self) -> i64 {
+    pub fn start(&self) -> u64 {
         self.start
     }
 
     /// Integer after last integer in `self`.
-    pub fn end(&self) -> i64 {
+    pub fn end(&self) -> u64 {
         self.start + self.length
     }
 
     /// Return `true` if `self` contains `p`. Else `false`.
-    pub fn contains(&self, p: i64) -> bool {
+    pub fn contains(&self, p: u64) -> bool {
         p >= self.start && p < self.end()
     }
 
@@ -60,9 +60,9 @@ impl Interval {
 
     /// Split `self` into two intervals.
     /// First - `[self.start; self.start + length)`, second - `[self.start + length; self.end)`.
-    pub fn split(&self, length: i64) -> (Self, Self) {
-        let len_fit = length >= 0 && length <= self.length;
-        assert!(len_fit, "Split length must be >= 0 and <= original length");
+    /// # Panics
+    /// * Panics if `length` > `self.length`
+    pub fn split(&self, length: u64) -> (Self, Self) {
         let left = Self::new(self.start, length);
         let right = Self::new(self.start + length, self.length - length);
         (left, right)
@@ -87,11 +87,11 @@ impl Interval {
 
 pub struct IntervalIterator<'a> {
     interval: &'a Interval,
-    counter: i64,
+    counter: u64,
 }
 
 impl<'a> Iterator for IntervalIterator<'a> {
-    type Item = i64;
+    type Item = u64;
 
     fn next(&mut self) -> Option<Self::Item> {
         let result = match self.counter < self.interval.len() {

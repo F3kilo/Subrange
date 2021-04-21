@@ -9,8 +9,7 @@ pub struct IntervalsCollection {
 }
 
 impl IntervalsCollection {
-    pub fn take_enough(&mut self, length: i64) -> Option<Interval> {
-        assert!(length >= 0, "Interval length must be >= 0");
+    pub fn take_enough(&mut self, length: u64) -> Option<Interval> {
         let int_len_ord = IntervalLenOrd(Interval::new(0, length));
         let bounds = (Bound::Included(int_len_ord), Bound::Unbounded);
         let range = self.btree.range(bounds);
@@ -21,16 +20,14 @@ impl IntervalsCollection {
         })
     }
 
-    pub fn take_enough_aligned(&mut self, length: i64, align: i64) -> Option<Interval> {
-        assert!(align > 0, "Interval alignment must be > 0");
-        assert!(length >= 0, "Interval length must be >= 0");
+    pub fn take_enough_aligned(&mut self, length: u64, align: u64) -> Option<Interval> {
         let int_len_ord = IntervalLenOrd(Interval::new(0, length));
         let bounds = (Bound::Included(int_len_ord), Bound::Unbounded);
         let mut range = self.btree.range(bounds);
         let enough_int = range
             .find(|i| {
                 let pad = Self::align_pad(&i.0, align);
-                (i.0.len() - pad) >= length
+                i.0.len() >= length + pad
             })
             .copied();
         if let Some(i) = enough_int {
@@ -40,7 +37,7 @@ impl IntervalsCollection {
         None
     }
 
-    pub fn take_exact(&mut self, length: i64) -> Option<Interval> {
+    pub fn take_exact(&mut self, length: u64) -> Option<Interval> {
         let enough_free_interval = self.take_enough(length);
         enough_free_interval.map(|int| {
             if int.len() > length {
@@ -52,7 +49,7 @@ impl IntervalsCollection {
         })
     }
 
-    pub fn take_exact_aligned(&mut self, length: i64, align: i64) -> Option<Interval> {
+    pub fn take_exact_aligned(&mut self, length: u64, align: u64) -> Option<Interval> {
         let enough_free_interval = self.take_enough_aligned(length, align);
         enough_free_interval.map(|int| {
             let align_pad = Self::align_pad(&int, align);
@@ -89,12 +86,12 @@ impl IntervalsCollection {
             .collect()
     }
 
-    fn align_pad(int: &Interval, align: i64) -> i64 {
+    fn align_pad(int: &Interval, align: u64) -> u64 {
         let rem = int.start() % align;
         if rem == 0 {
             return 0;
         }
-        return align - rem;
+        align - rem
     }
 
     pub fn iter(&self) -> impl Iterator<Item = &Interval> {
