@@ -1,4 +1,4 @@
-use std::cmp;
+use std::{cmp, fmt, ops::Range};
 
 /// Represent integer interval.
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
@@ -78,6 +78,18 @@ impl Interval {
     /// Return iterator over integers in `self`.
     pub fn iter(&self) -> impl Iterator<Item = u64> {
         self.start()..self.end()
+    }
+}
+
+impl From<Range<u64>> for Interval {
+    fn from(r: Range<u64>) -> Self {
+        Interval::new(r.start, r.end - r.start)
+    }
+}
+
+impl fmt::Display for Interval {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "[{}, {})", self.start(), self.end())
     }
 }
 
