@@ -76,29 +76,8 @@ impl Interval {
     }
 
     /// Return iterator over integers in `self`.
-    pub fn iter(&self) -> IntervalIterator {
-        IntervalIterator {
-            interval: &self,
-            counter: 0,
-        }
-    }
-}
-
-pub struct IntervalIterator<'a> {
-    interval: &'a Interval,
-    counter: u64,
-}
-
-impl<'a> Iterator for IntervalIterator<'a> {
-    type Item = u64;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let result = match self.counter < self.interval.len() {
-            true => Some(self.counter),
-            false => None,
-        };
-        self.counter += 1;
-        result
+    pub fn iter(&self) -> impl Iterator<Item = u64> {
+        self.start()..self.end()
     }
 }
 
@@ -143,5 +122,15 @@ mod tests {
 
         assert!(i1.try_join(&i3).is_none());
         assert!(i3.try_join(&i1).is_none());
+    }
+
+    #[test]
+    fn test_iter() {
+        let i = Interval::new(0, 3);
+        let mut iter = i.iter();
+        assert_eq!(iter.next(), Some(0));
+        assert_eq!(iter.next(), Some(1));
+        assert_eq!(iter.next(), Some(2));
+        assert_eq!(iter.next(), None);
     }
 }

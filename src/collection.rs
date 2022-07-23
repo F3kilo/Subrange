@@ -1,14 +1,25 @@
 use crate::interval::Interval;
 use std::cmp::Ordering;
 use std::collections::BTreeSet;
+use std::iter;
 use std::ops::Bound;
 
-#[derive(Debug)]
-pub struct IntervalsCollection {
+/// Collection of free intervals.
+/// You can take parts of the free intervals and add new free intervals.
+#[derive(Debug, Default)]
+pub struct FreeIntervals {
     btree: BTreeSet<IntervalLenOrd>,
 }
 
-impl IntervalsCollection {
+impl FreeIntervals {
+    /// Initialize collection with free interval.
+    pub fn new(free_interval: Interval) -> Self {
+        let btree = iter::once(IntervalLenOrd(free_interval)).collect();
+        Self { btree }
+    }
+
+    /// Take the minimal interval larger then `length`.
+    /// If collection doesn't contain such free interval, `None` will be returned.
     pub fn take_enough(&mut self, length: u64) -> Option<Interval> {
         let int_len_ord = IntervalLenOrd(Interval::new(0, length));
         let bounds = (Bound::Included(int_len_ord), Bound::Unbounded);
@@ -20,6 +31,10 @@ impl IntervalsCollection {
         })
     }
 
+    /// Take the minimal interval larger then `length`.
+    /// Add paddintg to the interval start, to align it.
+    /// The align padding will be added to collection as a new free interval.
+    /// If collection doesn't contain such free interval, `None` will be returned.
     pub fn take_enough_aligned(&mut self, length: u64, align: u64) -> Option<Interval> {
         let int_len_ord = IntervalLenOrd(Interval::new(0, length));
         let bounds = (Bound::Included(int_len_ord), Bound::Unbounded);
@@ -37,6 +52,9 @@ impl IntervalsCollection {
         None
     }
 
+    /// Take the minimal interval larger then `length` and split it into `[length, extra]` parts.
+    /// Add `extra` part as new free interval.
+    /// If collection doesn't contain such free interval, `None` will be returned.
     pub fn take_exact(&mut self, length: u64) -> Option<Interval> {
         let enough_free_interval = self.take_enough(length);
         enough_free_interval.map(|int| {
@@ -49,6 +67,11 @@ impl IntervalsCollection {
         })
     }
 
+    /// Take the minimal interval larger then `length` and split it into `[length, extra]` parts.
+    /// Add `extra` part as new free interval.
+    /// Add paddintg to the interval start, to align it.
+    /// The align padding will be added to collection as a new free interval.
+    /// If collection doesn't contain such free interval, `None` will be returned.
     pub fn take_exact_aligned(&mut self, length: u64, align: u64) -> Option<Interval> {
         let enough_free_interval = self.take_enough_aligned(length, align);
         enough_free_interval.map(|int| {
@@ -68,6 +91,8 @@ impl IntervalsCollection {
         })
     }
 
+    /// Insert free `interval` to collection.
+    /// Connects it with any near free interval in the collection.
     pub fn insert(&mut self, interval: Interval) {
         let near_intervals = self.near(&interval);
         let mut connection = interval;
@@ -78,6 +103,7 @@ impl IntervalsCollection {
         self.btree.insert(IntervalLenOrd(connection));
     }
 
+    /// Find all intervals near to `interval`.
     fn near(&self, interval: &Interval) -> Vec<IntervalLenOrd> {
         self.btree
             .iter()
@@ -99,13 +125,6 @@ impl IntervalsCollection {
     }
 }
 
-impl Default for IntervalsCollection {
-    fn default() -> Self {
-        let btree = BTreeSet::new();
-        Self { btree }
-    }
-}
-
 #[derive(Debug, Eq, PartialEq, Hash, Copy, Clone)]
 struct IntervalLenOrd(Interval);
 
@@ -123,11 +142,11 @@ impl Ord for IntervalLenOrd {
 
 #[cfg(test)]
 mod tests {
-    use crate::collection::IntervalsCollection;
+    use crate::collection::FreeIntervals;
     use crate::interval::Interval;
 
-    fn test_data() -> IntervalsCollection {
-        let mut coll = IntervalsCollection::default();
+    fn test_data() -> FreeIntervals {
+        let mut coll = FreeIntervals::default();
         let free_interval = Interval::new(0, 10);
         coll.insert(free_interval);
         coll
@@ -195,7 +214,7 @@ mod tests {
 
     #[test]
     fn take_exact_align() {
-        let mut coll = IntervalsCollection::default();
+        let mut coll = FreeIntervals::default();
         let free_interval = Interval::new(0, 30);
         coll.insert(free_interval);
 
