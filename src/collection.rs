@@ -95,18 +95,13 @@ impl FreeIntervals {
     /// Connects it with any near free interval in the collection.
     pub fn insert(&mut self, interval: Interval) {
         let near_intervals = self.near(&interval);
-        dbg!(&near_intervals);
         let mut connection = interval;
         for int in &near_intervals {
             self.btree.remove(int);
             connection = connection.connect(&int.0);
-            dbg!(&connection);
         }
 
-        dbg!(&connection);
-        dbg!(&self.btree);
         self.btree.insert(IntervalLenOrd(connection));
-        dbg!(&self.btree);
     }
 
     /// Restore interval storage to initial state.
