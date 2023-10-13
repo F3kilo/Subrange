@@ -100,7 +100,16 @@ impl FreeIntervals {
             self.btree.remove(int);
             connection = connection.connect(&int.0);
         }
+
         self.btree.insert(IntervalLenOrd(connection));
+    }
+
+    /// Restore interval storage to initial state.
+    pub fn clear(&mut self) {}
+
+    /// Returns iterator over free intervals.
+    pub fn iter(&self) -> impl Iterator<Item = &Interval> {
+        self.btree.iter().map(|i| &i.0)
     }
 
     /// Find all intervals near to `interval`.
@@ -119,10 +128,6 @@ impl FreeIntervals {
         }
         align - rem
     }
-
-    pub fn iter(&self) -> impl Iterator<Item = &Interval> {
-        self.btree.iter().map(|i| &i.0)
-    }
 }
 
 #[derive(Debug, Eq, PartialEq, Hash, Copy, Clone)]
@@ -130,13 +135,23 @@ struct IntervalLenOrd(Interval);
 
 impl PartialOrd for IntervalLenOrd {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        PartialOrd::partial_cmp(&self.0.len(), &other.0.len())
+        let len_cmp = self.0.len().partial_cmp(&other.0.len())?;
+        if len_cmp == Ordering::Equal {
+            return self.0.start().partial_cmp(&other.0.start());
+        }
+
+        Some(len_cmp)
     }
 }
 
 impl Ord for IntervalLenOrd {
     fn cmp(&self, other: &Self) -> Ordering {
-        Ord::cmp(&self.0.len(), &other.0.len())
+        let len_cmp = self.0.len().cmp(&other.0.len());
+        if len_cmp == Ordering::Equal {
+            return self.0.start().cmp(&other.0.start());
+        }
+
+        len_cmp
     }
 }
 
@@ -242,5 +257,23 @@ mod tests {
         coll.insert(Interval::new(15, 5));
         coll.insert(Interval::new(25, 3));
         assert!(coll.take_exact(20).is_none());
+    }
+
+    #[test]
+    fn insert_different_intervals_with_same_size() {
+        let mut collection = FreeIntervals::new((0..9).into());
+
+        let taken1 = collection.take_exact(3).unwrap();
+        let taken2 = collection.take_exact(3).unwrap();
+
+        {
+            let mut iter = collection.iter();
+            assert_eq!(iter.next().unwrap().len(), 3);
+            assert!(iter.next().is_none());
+        }
+
+        collection.insert(taken1);
+        collection.insert(taken2);
+        collection.take_exact(9).unwrap();
     }
 }
