@@ -1,6 +1,6 @@
 [package]
 name = "subranges"
-version = "0.3.2"
+version = "0.3.3"
 authors = ["f3kilo <f3kilo@yandex.ru>"]
 edition = "2021"
 repository = "https://github.com/F3kilo/subrange"
